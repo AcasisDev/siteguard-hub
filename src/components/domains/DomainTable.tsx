@@ -7,16 +7,19 @@ import { Input } from '@/components/ui/input';
 import { Plus, Search, Eye, Edit, Trash2, Database, Calendar, AlertTriangle, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ROLE_PERMISSIONS } from '@/types/auth';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow, differenceInDays } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import AddDomainForm from './AddDomainForm';
 
 const DomainTable: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
 
   if (!user) return null;
 
@@ -37,6 +40,11 @@ const DomainTable: React.FC = () => {
       return data || [];
     }
   });
+
+  const handleFormSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['domains'] });
+    refetch();
+  };
 
   const getStatusBadge = (status: string, expireDate: string) => {
     const daysUntilExpiry = differenceInDays(new Date(expireDate), new Date());
@@ -125,7 +133,10 @@ const DomainTable: React.FC = () => {
         </div>
         
         {permissions.domains.create && (
-          <Button className="flex items-center space-x-2">
+          <Button 
+            className="flex items-center space-x-2"
+            onClick={() => setIsAddFormOpen(true)}
+          >
             <Plus className="h-4 w-4" />
             <span>Add Domain</span>
           </Button>
@@ -239,6 +250,12 @@ const DomainTable: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <AddDomainForm
+        open={isAddFormOpen}
+        onOpenChange={setIsAddFormOpen}
+        onSuccess={handleFormSuccess}
+      />
     </div>
   );
 };

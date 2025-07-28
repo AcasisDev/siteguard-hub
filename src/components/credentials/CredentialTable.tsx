@@ -5,75 +5,59 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, Eye, Edit, Trash2, Key, EyeOff } from 'lucide-react';
-import { Credential } from '@/types/data';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ROLE_PERMISSIONS } from '@/types/auth';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import AddCredentialForm from './AddCredentialForm';
 
 const CredentialTable: React.FC = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
 
   if (!user) return null;
 
   const permissions = ROLE_PERMISSIONS[user.role];
 
-  // Mock data
-  const credentials: Credential[] = [
-    {
-      id: '1',
-      websiteId: '1',
-      type: 'ftp',
-      host: 'ftp.example.com',
-      username: 'admin',
-      password: 'SecurePass123!',
-      port: 21,
-      notes: 'Main FTP access',
-      createdAt: '2024-01-15T10:00:00Z',
-      updatedAt: '2024-01-20T14:30:00Z',
-    },
-    {
-      id: '2',
-      websiteId: '1',
-      type: 'smtp',
-      host: 'smtp.gmail.com',
-      username: 'noreply@example.com',
-      password: 'EmailPass456!',
-      port: 587,
-      notes: 'Email sending service',
-      createdAt: '2024-01-10T09:00:00Z',
-      updatedAt: '2024-01-18T16:45:00Z',
-    },
-    {
-      id: '3',
-      websiteId: '2',
-      type: 'cpanel',
-      host: 'cpanel.example.com',
-      username: 'cpanel_user',
-      password: 'CpanelSecure789!',
-      notes: 'Control panel access',
-      createdAt: '2024-01-05T11:00:00Z',
-      updatedAt: '2024-01-22T08:15:00Z',
-    },
-  ];
+  const { data: credentials, isLoading, refetch } = useQuery({
+    queryKey: ['credentials', searchTerm],
+    queryFn: async () => {
+      let query = supabase.from('credentials').select('*, websites(name, domain)');
+      
+      if (searchTerm) {
+        query = query.or(`host.ilike.%${searchTerm}%,username.ilike.%${searchTerm}%,type.ilike.%${searchTerm}%`);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
-  const filteredCredentials = credentials.filter(credential =>
-    credential.host.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    credential.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    credential.type.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleFormSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['credentials'] });
+    refetch();
+  };
 
-  const getTypeBadge = (type: Credential['type']) => {
+  const getTypeBadge = (type: string) => {
     const variants = {
       ftp: 'bg-info/10 text-info',
       smtp: 'bg-success/10 text-success',
       cpanel: 'bg-warning/10 text-warning',
       database: 'bg-destructive/10 text-destructive',
       ssh: 'bg-muted text-muted-foreground',
+      admin: 'bg-accent/10 text-accent-foreground',
       other: 'bg-accent/10 text-accent-foreground',
     };
     
-    return variants[type];
+    return variants[type as keyof typeof variants] || 'bg-accent/10 text-accent-foreground';
   };
 
   const togglePasswordVisibility = (id: string) => {
@@ -86,6 +70,42 @@ const CredentialTable: React.FC = () => {
     setVisiblePasswords(newVisible);
   };
 
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <Skeleton className="h-8 w-32" />
+            <Skeleton className="h-4 w-64 mt-2" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        
+        <Card className="shadow-soft">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-10 w-64" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const filteredCredentials = credentials?.filter(credential =>
+    credential.host.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    credential.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    credential.type.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -95,7 +115,10 @@ const CredentialTable: React.FC = () => {
         </div>
         
         {permissions.credentials.create && (
-          <Button className="flex items-center space-x-2">
+          <Button 
+            className="flex items-center space-x-2"
+            onClick={() => setIsAddFormOpen(true)}
+          >
             <Plus className="h-4 w-4" />
             <span>Add Credential</span>
           </Button>
@@ -202,6 +225,12 @@ const CredentialTable: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <AddCredentialForm
+        open={isAddFormOpen}
+        onOpenChange={setIsAddFormOpen}
+        onSuccess={handleFormSuccess}
+      />
     </div>
   );
 };

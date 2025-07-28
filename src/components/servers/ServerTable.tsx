@@ -108,7 +108,10 @@ const ServerTable: React.FC = () => {
         </div>
         
         {permissions.servers.create && (
-          <Button className="flex items-center space-x-2">
+          <Button 
+            className="flex items-center space-x-2"
+            onClick={() => setIsAddFormOpen(true)}
+          >
             <Plus className="h-4 w-4" />
             <span>Add Server</span>
           </Button>
