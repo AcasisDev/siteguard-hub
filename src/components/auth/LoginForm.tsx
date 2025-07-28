@@ -151,6 +151,18 @@ const LoginForm: React.FC = () => {
                 {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
               </Button>
             </div>
+
+            <div className="mt-4 p-3 bg-muted rounded-lg text-sm text-muted-foreground">
+              <p className="font-medium mb-2">Demo Instructions:</p>
+              <p className="mb-2">1. <strong>Sign up</strong> with any email to get viewer role automatically</p>
+              <p className="mb-2">2. <strong>Test roles:</strong> Use emails like:</p>
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                <li>admin@demo.com → Will be admin</li>
+                <li>editor@demo.com → Will be editor</li>
+                <li>viewer@demo.com → Will be viewer</li>
+              </ul>
+              <p className="mt-2 text-xs">After signup, I'll assign the appropriate role based on your email.</p>
+            </div>
           </CardContent>
         </Card>
       </div>
