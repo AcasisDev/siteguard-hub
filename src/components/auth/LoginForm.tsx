@@ -3,19 +3,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Shield, Lock, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { UserRole } from '@/types/auth';
 import { useToast } from '@/hooks/use-toast';
 import heroImage from '@/assets/hero-dashboard.jpg';
 
 const LoginForm: React.FC = () => {
-  const [email, setEmail] = useState('admin@siteguard.com');
-  const [password, setPassword] = useState('password');
-  const [role, setRole] = useState<UserRole>('admin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [isSignUp, setIsSignUp] = useState(false);
+  const { login, signup } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,15 +22,24 @@ const LoginForm: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await login(email, password, role);
+      if (isSignUp) {
+        await signup(email, password, displayName);
+        toast({
+          title: 'Account created successfully',
+          description: 'Please check your email to confirm your account.',
+        });
+        setIsSignUp(false);
+      } else {
+        await login(email, password);
+        toast({
+          title: 'Login successful',
+          description: 'Welcome back!',
+        });
+      }
+    } catch (error: any) {
       toast({
-        title: 'Login successful',
-        description: `Welcome back! Logged in as ${role}.`,
-      });
-    } catch (error) {
-      toast({
-        title: 'Login failed',
-        description: 'Please check your credentials and try again.',
+        title: isSignUp ? 'Signup failed' : 'Login failed',
+        description: error.message || 'Please check your credentials and try again.',
         variant: 'destructive',
       });
     } finally {
@@ -82,13 +90,27 @@ const LoginForm: React.FC = () => {
             <div className="mx-auto w-12 h-12 bg-primary rounded-full flex items-center justify-center mb-4">
               <Shield className="h-6 w-6 text-primary-foreground" />
             </div>
-            <CardTitle className="text-2xl">Welcome back</CardTitle>
+            <CardTitle className="text-2xl">{isSignUp ? 'Create account' : 'Welcome back'}</CardTitle>
             <CardDescription>
-              Sign in to your SiteGuard account
+              {isSignUp ? 'Sign up for a new SiteGuard account' : 'Sign in to your SiteGuard account'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {isSignUp && (
+                <div className="space-y-2">
+                  <Label htmlFor="displayName">Display Name</Label>
+                  <Input
+                    id="displayName"
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Enter your display name"
+                    required
+                  />
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -110,31 +132,24 @@ const LoginForm: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   required
+                  minLength={6}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="role">Login as</Label>
-                <Select value={role} onValueChange={(value: UserRole) => setRole(value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="superadmin">Superadmin</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="editor">Editor</SelectItem>
-                    <SelectItem value="viewer">Viewer</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Signing in...' : 'Sign in'}
+                {isLoading ? (isSignUp ? 'Creating account...' : 'Signing in...') : (isSignUp ? 'Create account' : 'Sign in')}
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              Demo credentials: admin@siteguard.com / password
+            <div className="mt-6 text-center">
+              <Button
+                type="button"
+                variant="link"
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-sm"
+              >
+                {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+              </Button>
             </div>
           </CardContent>
         </Card>

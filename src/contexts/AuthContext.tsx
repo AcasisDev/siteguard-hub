@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { User, AuthContext as AuthContextType, UserRole } from '@/types/auth';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,41 +19,114 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Check for stored auth data
-    const storedUser = localStorage.getItem('siteguard_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
-
-  const login = async (email: string, password: string, role?: UserRole) => {
-    // Mock authentication - in real app this would call an API
-    const mockUser: User = {
-      id: '1',
-      name: 'John Doe',
-      email,
-      role: role || 'admin',
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+  const getUserRole = async (userId: string): Promise<UserRole> => {
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+    
+    // Map database roles to app roles
+    const roleMap: Record<string, UserRole> = {
+      'super_admin': 'superadmin',
+      'admin': 'admin',
+      'editor': 'editor',
+      'viewer': 'viewer'
     };
-
-    setUser(mockUser);
-    localStorage.setItem('siteguard_user', JSON.stringify(mockUser));
+    
+    return roleMap[data?.role] || 'viewer';
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('siteguard_user');
+  const createUserFromSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
+    const role = await getUserRole(supabaseUser.id);
+    
+    // Get profile data
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, avatar_url')
+      .eq('id', supabaseUser.id)
+      .single();
+
+    return {
+      id: supabaseUser.id,
+      name: profile?.display_name || supabaseUser.email?.split('@')[0] || 'User',
+      email: supabaseUser.email || '',
+      role,
+      avatar: profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${supabaseUser.email}`,
+      createdAt: supabaseUser.created_at,
+      updatedAt: supabaseUser.updated_at || supabaseUser.created_at,
+    };
+  };
+
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        if (session?.user) {
+          const userData = await createUserFromSupabaseUser(session.user);
+          setUser(userData);
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        const userData = await createUserFromSupabaseUser(session.user);
+        setUser(userData);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (error) throw error;
+  };
+
+  const signup = async (email: string, password: string, displayName?: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          display_name: displayName,
+        },
+      },
+    });
+    
+    if (error) throw error;
+  };
+
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   };
 
   const value: AuthContextType = {
     user,
     login,
     logout,
+    signup,
     isAuthenticated: !!user,
+    loading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
