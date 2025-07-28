@@ -23,11 +23,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   const getUserRole = async (userId: string): Promise<UserRole> => {
-    const { data } = await supabase
+    console.log('Getting role for user:', userId);
+    const { data, error } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
+    
+    console.log('Role query result:', { data, error });
     
     // Map database roles to app roles
     const roleMap: Record<string, UserRole> = {
@@ -48,7 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       .from('profiles')
       .select('display_name, avatar_url')
       .eq('id', supabaseUser.id)
-      .single();
+      .maybeSingle();
 
     return {
       id: supabaseUser.id,
@@ -99,20 +102,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signup = async (email: string, password: string, displayName?: string) => {
+    console.log('Starting signup process for:', email);
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          display_name: displayName,
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            display_name: displayName,
+          },
         },
-      },
-    });
-    
-    if (error) throw error;
+      });
+      
+      console.log('Signup response:', { data, error });
+      
+      if (error) {
+        console.error('Signup error:', error);
+        throw error;
+      }
+      
+      console.log('Signup successful for:', email);
+    } catch (error) {
+      console.error('Caught signup error:', error);
+      throw error;
+    }
   };
 
   const logout = async () => {
