@@ -5,6 +5,8 @@ import RecentActivity from '../dashboard/RecentActivity';
 import WebsiteTable from '../websites/WebsiteTable';
 import CredentialTable from '../credentials/CredentialTable';
 import UserTable from '../users/UserTable';
+import DomainTable from '../domains/DomainTable';
+import ServerTable from '../servers/ServerTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Database, Server } from 'lucide-react';
 
@@ -53,51 +55,9 @@ const MainLayout: React.FC = () => {
       case 'credentials':
         return <CredentialTable />;
       case 'domains':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">Domains</h2>
-              <p className="text-muted-foreground">Manage domain registrations and DNS</p>
-            </div>
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Database className="h-5 w-5" />
-                  <span>Domain Management</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Domain management feature coming soon</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <DomainTable />;
       case 'servers':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">Servers</h2>
-              <p className="text-muted-foreground">Monitor and manage server infrastructure</p>
-            </div>
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Server className="h-5 w-5" />
-                  <span>Server Management</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12 text-muted-foreground">
-                  <Server className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Server management feature coming soon</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
+        return <ServerTable />;
       case 'users':
         return <UserTable />;
       default:
