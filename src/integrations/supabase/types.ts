@@ -24,7 +24,7 @@ export type Database = {
           port: number | null
           type: Database["public"]["Enums"]["credential_type"]
           updated_at: string | null
-          user_id: string
+          user_id: string | null
           username: string
           website_id: string
         }
@@ -37,7 +37,7 @@ export type Database = {
           port?: number | null
           type: Database["public"]["Enums"]["credential_type"]
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
           username: string
           website_id: string
         }
@@ -50,7 +50,7 @@ export type Database = {
           port?: number | null
           type?: Database["public"]["Enums"]["credential_type"]
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
           username?: string
           website_id?: string
         }
@@ -75,7 +75,7 @@ export type Database = {
           registrar: string
           status: Database["public"]["Enums"]["domain_status"]
           updated_at: string | null
-          user_id: string
+          user_id: string | null
           website_id: string
         }
         Insert: {
@@ -88,7 +88,7 @@ export type Database = {
           registrar: string
           status?: Database["public"]["Enums"]["domain_status"]
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
           website_id: string
         }
         Update: {
@@ -101,7 +101,7 @@ export type Database = {
           registrar?: string
           status?: Database["public"]["Enums"]["domain_status"]
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
           website_id?: string
         }
         Relationships: [
@@ -125,7 +125,7 @@ export type Database = {
           ssh_username: string | null
           status: Database["public"]["Enums"]["server_status"]
           updated_at: string | null
-          user_id: string
+          user_id: string | null
           website_id: string
         }
         Insert: {
@@ -138,7 +138,7 @@ export type Database = {
           ssh_username?: string | null
           status?: Database["public"]["Enums"]["server_status"]
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
           website_id: string
         }
         Update: {
@@ -151,7 +151,7 @@ export type Database = {
           ssh_username?: string | null
           status?: Database["public"]["Enums"]["server_status"]
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
           website_id?: string
         }
         Relationships: [
@@ -196,7 +196,7 @@ export type Database = {
           server_ip: string
           status: Database["public"]["Enums"]["website_status"]
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -208,7 +208,7 @@ export type Database = {
           server_ip: string
           status?: Database["public"]["Enums"]["website_status"]
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -220,7 +220,7 @@ export type Database = {
           server_ip?: string
           status?: Database["public"]["Enums"]["website_status"]
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }
