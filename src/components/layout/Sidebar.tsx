@@ -135,7 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start space-x-2 text-sidebar-foreground/70 hover:text-sidebar-foreground"
+          className="w-full justify-start space-x-2 text-sidebar-foreground/70 hover:text-sidebar-foreground cursor-pointer"
           onClick={logout}
         >
           <LogOut className="h-4 w-4" />
