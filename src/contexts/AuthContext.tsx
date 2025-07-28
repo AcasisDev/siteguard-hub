@@ -24,44 +24,78 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const getUserRole = async (userId: string): Promise<UserRole> => {
     console.log('Getting role for user:', userId);
-    const { data, error } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .maybeSingle();
-    
-    console.log('Role query result:', { data, error });
-    
-    // Map database roles to app roles
-    const roleMap: Record<string, UserRole> = {
-      'super_admin': 'superadmin',
-      'admin': 'admin',
-      'editor': 'editor',
-      'viewer': 'viewer'
-    };
-    
-    return roleMap[data?.role] || 'viewer';
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      console.log('Role query result:', { data, error });
+      
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return 'viewer'; // Default fallback
+      }
+      
+      // Map database roles to app roles
+      const roleMap: Record<string, UserRole> = {
+        'super_admin': 'superadmin',
+        'admin': 'admin',
+        'editor': 'editor',
+        'viewer': 'viewer'
+      };
+      
+      const role = roleMap[data?.role] || 'viewer';
+      console.log('Mapped role:', role);
+      return role;
+    } catch (error) {
+      console.error('Exception in getUserRole:', error);
+      return 'viewer';
+    }
   };
 
   const createUserFromSupabaseUser = async (supabaseUser: SupabaseUser): Promise<User> => {
-    const role = await getUserRole(supabaseUser.id);
-    
-    // Get profile data
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('display_name, avatar_url')
-      .eq('id', supabaseUser.id)
-      .maybeSingle();
+    console.log('Creating user from Supabase user:', supabaseUser.id);
+    try {
+      const role = await getUserRole(supabaseUser.id);
+      
+      // Get profile data
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('display_name, avatar_url')
+        .eq('id', supabaseUser.id)
+        .maybeSingle();
 
-    return {
-      id: supabaseUser.id,
-      name: profile?.display_name || supabaseUser.email?.split('@')[0] || 'User',
-      email: supabaseUser.email || '',
-      role,
-      avatar: profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${supabaseUser.email}`,
-      createdAt: supabaseUser.created_at,
-      updatedAt: supabaseUser.updated_at || supabaseUser.created_at,
-    };
+      if (profileError) {
+        console.error('Error fetching profile:', profileError);
+      }
+
+      const userData = {
+        id: supabaseUser.id,
+        name: profile?.display_name || supabaseUser.email?.split('@')[0] || 'User',
+        email: supabaseUser.email || '',
+        role,
+        avatar: profile?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${supabaseUser.email}`,
+        createdAt: supabaseUser.created_at,
+        updatedAt: supabaseUser.updated_at || supabaseUser.created_at,
+      };
+      
+      console.log('Created user data:', userData);
+      return userData;
+    } catch (error) {
+      console.error('Exception in createUserFromSupabaseUser:', error);
+      // Return a basic user object even if there are errors
+      return {
+        id: supabaseUser.id,
+        name: supabaseUser.email?.split('@')[0] || 'User',
+        email: supabaseUser.email || '',
+        role: 'viewer',
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${supabaseUser.email}`,
+        createdAt: supabaseUser.created_at,
+        updatedAt: supabaseUser.updated_at || supabaseUser.created_at,
+      };
+    }
   };
 
   useEffect(() => {
