@@ -14,16 +14,235 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      credentials: {
+        Row: {
+          created_at: string | null
+          host: string
+          id: string
+          notes: string | null
+          password: string
+          port: number | null
+          type: Database["public"]["Enums"]["credential_type"]
+          updated_at: string | null
+          user_id: string
+          username: string
+          website_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          host: string
+          id?: string
+          notes?: string | null
+          password: string
+          port?: number | null
+          type: Database["public"]["Enums"]["credential_type"]
+          updated_at?: string | null
+          user_id: string
+          username: string
+          website_id: string
+        }
+        Update: {
+          created_at?: string | null
+          host?: string
+          id?: string
+          notes?: string | null
+          password?: string
+          port?: number | null
+          type?: Database["public"]["Enums"]["credential_type"]
+          updated_at?: string | null
+          user_id?: string
+          username?: string
+          website_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credentials_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      domains: {
+        Row: {
+          created_at: string | null
+          domain_name: string
+          expire_date: string
+          id: string
+          nameservers: string[] | null
+          register_date: string
+          registrar: string
+          status: Database["public"]["Enums"]["domain_status"]
+          updated_at: string | null
+          user_id: string
+          website_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          domain_name: string
+          expire_date: string
+          id?: string
+          nameservers?: string[] | null
+          register_date: string
+          registrar: string
+          status?: Database["public"]["Enums"]["domain_status"]
+          updated_at?: string | null
+          user_id: string
+          website_id: string
+        }
+        Update: {
+          created_at?: string | null
+          domain_name?: string
+          expire_date?: string
+          id?: string
+          nameservers?: string[] | null
+          register_date?: string
+          registrar?: string
+          status?: Database["public"]["Enums"]["domain_status"]
+          updated_at?: string | null
+          user_id?: string
+          website_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "domains_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      servers: {
+        Row: {
+          created_at: string | null
+          id: string
+          ip_address: string
+          notes: string | null
+          provider: string
+          ssh_password: string | null
+          ssh_username: string | null
+          status: Database["public"]["Enums"]["server_status"]
+          updated_at: string | null
+          user_id: string
+          website_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ip_address: string
+          notes?: string | null
+          provider: string
+          ssh_password?: string | null
+          ssh_username?: string | null
+          status?: Database["public"]["Enums"]["server_status"]
+          updated_at?: string | null
+          user_id: string
+          website_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ip_address?: string
+          notes?: string | null
+          provider?: string
+          ssh_password?: string | null
+          ssh_username?: string | null
+          status?: Database["public"]["Enums"]["server_status"]
+          updated_at?: string | null
+          user_id?: string
+          website_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servers_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      websites: {
+        Row: {
+          created_at: string | null
+          domain: string
+          id: string
+          name: string
+          notes: string | null
+          provider: string
+          server_ip: string
+          status: Database["public"]["Enums"]["website_status"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          domain: string
+          id?: string
+          name: string
+          notes?: string | null
+          provider: string
+          server_ip: string
+          status?: Database["public"]["Enums"]["website_status"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          domain?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          provider?: string
+          server_ip?: string
+          status?: Database["public"]["Enums"]["website_status"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _user_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "super_admin" | "editor"
+      credential_type: "ftp" | "smtp" | "cpanel" | "database" | "ssh" | "other"
+      domain_status: "active" | "expired" | "pending"
+      server_status: "online" | "offline" | "maintenance"
+      website_status: "active" | "inactive" | "maintenance"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +369,12 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "super_admin", "editor"],
+      credential_type: ["ftp", "smtp", "cpanel", "database", "ssh", "other"],
+      domain_status: ["active", "expired", "pending"],
+      server_status: ["online", "offline", "maintenance"],
+      website_status: ["active", "inactive", "maintenance"],
+    },
   },
 } as const
