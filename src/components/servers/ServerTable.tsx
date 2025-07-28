@@ -7,16 +7,19 @@ import { Input } from '@/components/ui/input';
 import { Plus, Search, Eye, Edit, Trash2, Server, Activity, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ROLE_PERMISSIONS } from '@/types/auth';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import AddServerForm from './AddServerForm';
 
 const ServerTable: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
 
   if (!user) return null;
 
@@ -37,6 +40,11 @@ const ServerTable: React.FC = () => {
       return data || [];
     }
   });
+
+  const handleFormSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['servers'] });
+    refetch();
+  };
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -237,6 +245,12 @@ const ServerTable: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      <AddServerForm
+        open={isAddFormOpen}
+        onOpenChange={setIsAddFormOpen}
+        onSuccess={handleFormSuccess}
+      />
     </div>
   );
 };
