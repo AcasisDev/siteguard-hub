@@ -4,42 +4,58 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, Search, Eye, Edit, Trash2, Key, EyeOff, AlertCircle } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, Key, EyeOff } from 'lucide-react';
 import { Credential } from '@/types/data';
 import { useAuth } from '@/contexts/AuthContext';
 import { ROLE_PERMISSIONS } from '@/types/auth';
-import { useCredentials } from '@/hooks/useCredentials';
 
 const CredentialTable: React.FC = () => {
   const { user } = useAuth();
-  const { credentials, loading, error } = useCredentials();
   const [searchTerm, setSearchTerm] = useState('');
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
 
-  if (!user) {
-    return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          You need to be logged in to view credentials.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Error loading credentials: {error}
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  if (!user) return null;
 
   const permissions = ROLE_PERMISSIONS[user.role];
+
+  // Mock data
+  const credentials: Credential[] = [
+    {
+      id: '1',
+      websiteId: '1',
+      type: 'ftp',
+      host: 'ftp.example.com',
+      username: 'admin',
+      password: 'SecurePass123!',
+      port: 21,
+      notes: 'Main FTP access',
+      createdAt: '2024-01-15T10:00:00Z',
+      updatedAt: '2024-01-20T14:30:00Z',
+    },
+    {
+      id: '2',
+      websiteId: '1',
+      type: 'smtp',
+      host: 'smtp.gmail.com',
+      username: 'noreply@example.com',
+      password: 'EmailPass456!',
+      port: 587,
+      notes: 'Email sending service',
+      createdAt: '2024-01-10T09:00:00Z',
+      updatedAt: '2024-01-18T16:45:00Z',
+    },
+    {
+      id: '3',
+      websiteId: '2',
+      type: 'cpanel',
+      host: 'cpanel.example.com',
+      username: 'cpanel_user',
+      password: 'CpanelSecure789!',
+      notes: 'Control panel access',
+      createdAt: '2024-01-05T11:00:00Z',
+      updatedAt: '2024-01-22T08:15:00Z',
+    },
+  ];
 
   const filteredCredentials = credentials.filter(credential =>
     credential.host.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -47,8 +63,8 @@ const CredentialTable: React.FC = () => {
     credential.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getTypeBadge = (type: string) => {
-    const variants: Record<string, string> = {
+  const getTypeBadge = (type: Credential['type']) => {
+    const variants = {
       ftp: 'bg-info/10 text-info',
       smtp: 'bg-success/10 text-success',
       cpanel: 'bg-warning/10 text-warning',
@@ -57,7 +73,7 @@ const CredentialTable: React.FC = () => {
       other: 'bg-accent/10 text-accent-foreground',
     };
     
-    return variants[type] || variants.other;
+    return variants[type];
   };
 
   const togglePasswordVisibility = (id: string) => {
@@ -107,95 +123,83 @@ const CredentialTable: React.FC = () => {
         </CardHeader>
         
         <CardContent>
-          {loading ? (
-            <div className="flex justify-center items-center py-8">
-              <div className="text-muted-foreground">Loading credentials...</div>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Host</TableHead>
+                  <TableHead>Username</TableHead>
+                  <TableHead>Password</TableHead>
+                  <TableHead>Port</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCredentials.length === 0 ? (
                   <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Host</TableHead>
-                    <TableHead>Username</TableHead>
-                    <TableHead>Password</TableHead>
-                    <TableHead>Port</TableHead>
-                    <TableHead>Website</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      No credentials found
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCredentials.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        {credentials.length === 0 
-                          ? "No credentials found. Add your first credential to get started." 
-                          : "No credentials match your search."}
+                ) : (
+                  filteredCredentials.map((credential) => (
+                    <TableRow key={credential.id}>
+                      <TableCell>
+                        <Badge className={getTypeBadge(credential.type)}>
+                          {credential.type.toUpperCase()}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">{credential.host}</TableCell>
+                      <TableCell className="font-mono text-sm">{credential.username}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono text-sm">
+                            {visiblePasswords.has(credential.id) 
+                              ? credential.password 
+                              : '••••••••'
+                            }
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => togglePasswordVisibility(credential.id)}
+                            className="h-6 w-6 p-0"
+                          >
+                            {visiblePasswords.has(credential.id) ? (
+                              <EyeOff className="h-3 w-3" />
+                            ) : (
+                              <Eye className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">
+                        {credential.port || '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-1">
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {permissions.credentials.update && (
+                            <Button variant="ghost" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {permissions.credentials.delete && (
+                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    filteredCredentials.map((credential) => (
-                      <TableRow key={credential.id}>
-                        <TableCell>
-                          <Badge className={getTypeBadge(credential.type)}>
-                            {credential.type.toUpperCase()}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">{credential.host}</TableCell>
-                        <TableCell className="font-mono text-sm">{credential.username}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-mono text-sm">
-                              {visiblePasswords.has(credential.id) 
-                                ? credential.password 
-                                : '••••••••'
-                              }
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => togglePasswordVisibility(credential.id)}
-                              className="h-6 w-6 p-0"
-                            >
-                              {visiblePasswords.has(credential.id) ? (
-                                <EyeOff className="h-3 w-3" />
-                              ) : (
-                                <Eye className="h-3 w-3" />
-                              )}
-                            </Button>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {credential.port || '-'}
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {credential.websites?.name || 'Unknown'}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end space-x-1">
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            {permissions.credentials.update && (
-                              <Button variant="ghost" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {permissions.credentials.delete && (
-                              <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
